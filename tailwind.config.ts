@@ -7,6 +7,7 @@ export default {
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+			"./1779892324308085772.html"
 	],
 	prefix: "",
 	theme: {
@@ -17,8 +18,17 @@ export default {
 				'2xl': '1400px'
 			}
 		},
+		fontFamily: {
+			display: ['Oswald', 'sans-serif'],
+			body: ['IBM Plex Sans', 'sans-serif'],
+		},
 		extend: {
 			colors: {
+				'club-red': '#E8001C',
+				'club-steel': '#1A1E27',
+				'club-dark': '#0D0F14',
+				'club-chrome': '#8A9BB0',
+				'club-light': '#E8EDF4',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
@@ -70,25 +80,45 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'fade-in': {
+					from: { opacity: '0', transform: 'translateY(30px)' },
+					to: { opacity: '1', transform: 'translateY(0)' }
+				},
+				'slide-left': {
+					from: { opacity: '0', transform: 'translateX(-60px)' },
+					to: { opacity: '1', transform: 'translateX(0)' }
+				},
+				'slide-right': {
+					from: { opacity: '0', transform: 'translateX(60px)' },
+					to: { opacity: '1', transform: 'translateX(0)' }
+				},
+				'speed-line': {
+					'0%': { transform: 'scaleX(0)', opacity: '0' },
+					'50%': { opacity: '1' },
+					'100%': { transform: 'scaleX(1)', opacity: '0.3' }
+				},
+				'pulse-red': {
+					'0%, 100%': { boxShadow: '0 0 0 0 rgba(232,0,28,0.4)' },
+					'50%': { boxShadow: '0 0 0 12px rgba(232,0,28,0)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.8s ease-out forwards',
+				'fade-in-delay': 'fade-in 0.8s ease-out 0.3s forwards',
+				'fade-in-delay2': 'fade-in 0.8s ease-out 0.6s forwards',
+				'slide-left': 'slide-left 0.7s ease-out forwards',
+				'slide-right': 'slide-right 0.7s ease-out forwards',
+				'speed-line': 'speed-line 2s ease-in-out infinite',
+				'pulse-red': 'pulse-red 2s ease-in-out infinite'
 			}
 		}
 	},
