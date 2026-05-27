@@ -62,6 +62,11 @@ export default function Index() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regCar, setRegCar] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,7 +130,7 @@ export default function Index() {
             >
               Войти
             </button>
-            <button className="font-display text-sm tracking-wider bg-club-red text-white px-4 py-2 uppercase hover:bg-red-700 transition-colors">
+            <button onClick={() => setRegisterOpen(true)} className="font-display text-sm tracking-wider bg-club-red text-white px-4 py-2 uppercase hover:bg-red-700 transition-colors">
               Вступить
             </button>
           </div>
@@ -148,7 +153,7 @@ export default function Index() {
             ))}
             <div className="flex gap-3 mt-3 pt-3 border-t border-white/10">
               <button onClick={() => { setLoginOpen(true); setMobileMenuOpen(false); }} className="flex-1 font-display text-sm tracking-wider text-club-chrome border border-club-chrome/30 py-2 uppercase">Войти</button>
-              <button className="flex-1 font-display text-sm tracking-wider bg-club-red text-white py-2 uppercase">Вступить</button>
+              <button onClick={() => { setRegisterOpen(true); setMobileMenuOpen(false); }} className="flex-1 font-display text-sm tracking-wider bg-club-red text-white py-2 uppercase">Вступить</button>
             </div>
           </div>
         )}
@@ -605,8 +610,93 @@ export default function Index() {
 
                 <div className="text-center pt-2">
                   <span className="text-club-chrome text-xs">Ещё нет аккаунта? </span>
-                  <button className="font-display text-xs tracking-wider text-club-red hover:text-red-400 transition-colors uppercase">
+                  <button onClick={() => { setLoginOpen(false); setRegisterOpen(true); }} className="font-display text-xs tracking-wider text-club-red hover:text-red-400 transition-colors uppercase">
                     Вступить в клуб
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REGISTER MODAL */}
+      {registerOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-club-dark/80 backdrop-blur-sm" onClick={() => setRegisterOpen(false)} />
+          <div className="relative bg-club-steel border border-white/10 w-full max-w-sm animate-fade-in" style={{ animationFillMode: "forwards" }}>
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-club-red" />
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 bg-club-red flex items-center justify-center rotate-45">
+                      <span className="text-white font-display font-bold text-[8px] -rotate-45">T</span>
+                    </div>
+                    <span className="font-display font-bold text-sm tracking-widest text-white">TOUAREG<span className="text-club-red">CLUB</span></span>
+                  </div>
+                  <div className="font-display text-xs tracking-[0.3em] text-club-chrome uppercase mt-2">Вступить в клуб</div>
+                </div>
+                <button onClick={() => setRegisterOpen(false)} className="text-club-chrome hover:text-white transition-colors">
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Имя / Никнейм</label>
+                  <input
+                    type="text"
+                    value={regName}
+                    onChange={e => setRegName(e.target.value)}
+                    placeholder="Алексей_T4"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Пароль</label>
+                  <input
+                    type="password"
+                    value={regPassword}
+                    onChange={e => setRegPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Ваш Touareg</label>
+                  <input
+                    type="text"
+                    value={regCar}
+                    onChange={e => setRegCar(e.target.value)}
+                    placeholder="Touareg 3.0 TDI 2015"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                  />
+                </div>
+
+                <button
+                  onClick={() => setRegisterOpen(false)}
+                  className="w-full bg-club-red hover:bg-red-700 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                >
+                  <Icon name="UserPlus" size={16} />
+                  Вступить в клуб
+                </button>
+
+                <div className="text-center pt-2">
+                  <span className="text-club-chrome text-xs">Уже есть аккаунт? </span>
+                  <button onClick={() => { setRegisterOpen(false); setLoginOpen(true); }} className="font-display text-xs tracking-wider text-club-red hover:text-red-400 transition-colors uppercase">
+                    Войти
                   </button>
                 </div>
               </div>
