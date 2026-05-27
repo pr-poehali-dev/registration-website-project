@@ -54,24 +54,92 @@ function SectionHeader({ title, sub }: { title: string; sub: string }) {
   );
 }
 
+const AUTH_URL = "https://functions.poehali.dev/0fdb3888-4048-481a-b03c-afd58fd284e5";
+
 export default function Index() {
   const [activeSection, setActiveSection] = useState("Главная");
   const [chatMsg, setChatMsg] = useState("");
   const [messages, setMessages] = useState(CHAT_MESSAGES_INIT);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   const [registerOpen, setRegisterOpen] = useState(false);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regCar, setRegCar] = useState("");
+  const [regError, setRegError] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
+
+  const [currentUser, setCurrentUser] = useState<{id: number; nickname: string; email: string; car: string} | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const sid = localStorage.getItem("session_id");
+    if (sid) {
+      fetch(`${AUTH_URL}?action=me`, { headers: { "X-Session-Id": sid } })
+        .then(r => r.json())
+        .then(data => { if (data.user) setCurrentUser(data.user); })
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const doLogin = async () => {
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const r = await fetch(`${AUTH_URL}?action=login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setLoginError(data.error || "Ошибка входа"); return; }
+      localStorage.setItem("session_id", data.session_id);
+      setCurrentUser(data.user);
+      setLoginOpen(false);
+      setLoginEmail(""); setLoginPassword("");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const doRegister = async () => {
+    setRegError("");
+    setRegLoading(true);
+    try {
+      const r = await fetch(`${AUTH_URL}?action=register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname: regName, email: regEmail, password: regPassword, car: regCar }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setRegError(data.error || "Ошибка регистрации"); return; }
+      localStorage.setItem("session_id", data.session_id);
+      setCurrentUser(data.user);
+      setRegisterOpen(false);
+      setRegName(""); setRegEmail(""); setRegPassword(""); setRegCar("");
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
+  const doLogout = async () => {
+    const sid = localStorage.getItem("session_id");
+    if (sid) await fetch(`${AUTH_URL}?action=logout`, { method: "POST", headers: { "X-Session-Id": sid } });
+    localStorage.removeItem("session_id");
+    setCurrentUser(null);
+  };
 
   const sendMessage = () => {
     if (!chatMsg.trim()) return;
@@ -124,15 +192,28 @@ export default function Index() {
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <button
-              onClick={() => setLoginOpen(true)}
-              className="font-display text-sm tracking-wider text-club-chrome hover:text-white transition-colors uppercase"
-            >
-              Войти
-            </button>
-            <button onClick={() => setRegisterOpen(true)} className="font-display text-sm tracking-wider bg-club-red text-white px-4 py-2 uppercase hover:bg-red-700 transition-colors">
-              Вступить
-            </button>
+            {currentUser ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 bg-club-red flex items-center justify-center font-display font-bold text-white text-xs">
+                    {currentUser.nickname[0].toUpperCase()}
+                  </div>
+                  <span className="font-display text-sm tracking-wider text-white uppercase">{currentUser.nickname}</span>
+                </div>
+                <button onClick={doLogout} className="font-display text-xs tracking-wider text-club-chrome hover:text-club-red transition-colors uppercase">
+                  Выйти
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setLoginOpen(true)} className="font-display text-sm tracking-wider text-club-chrome hover:text-white transition-colors uppercase">
+                  Войти
+                </button>
+                <button onClick={() => setRegisterOpen(true)} className="font-display text-sm tracking-wider bg-club-red text-white px-4 py-2 uppercase hover:bg-red-700 transition-colors">
+                  Вступить
+                </button>
+              </>
+            )}
           </div>
 
           <button className="lg:hidden text-club-chrome" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -590,22 +671,21 @@ export default function Index() {
                     onChange={e => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
                     className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
-                    onKeyDown={e => e.key === "Enter" && setLoginOpen(false)}
+                    onKeyDown={e => e.key === "Enter" && doLogin()}
                   />
                 </div>
 
-                <div className="flex items-center justify-end">
-                  <button className="font-display text-xs tracking-wider text-club-chrome hover:text-club-red transition-colors uppercase">
-                    Забыли пароль?
-                  </button>
-                </div>
+                {loginError && (
+                  <div className="text-club-red text-xs font-body bg-club-red/10 border border-club-red/20 px-3 py-2">{loginError}</div>
+                )}
 
                 <button
-                  onClick={() => setLoginOpen(false)}
-                  className="w-full bg-club-red hover:bg-red-700 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                  onClick={doLogin}
+                  disabled={loginLoading}
+                  className="w-full bg-club-red hover:bg-red-700 disabled:opacity-60 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
                 >
-                  <Icon name="LogIn" size={16} />
-                  Войти
+                  <Icon name={loginLoading ? "Loader" : "LogIn"} size={16} className={loginLoading ? "animate-spin" : ""} />
+                  {loginLoading ? "Входим..." : "Войти"}
                 </button>
 
                 <div className="text-center pt-2">
@@ -685,12 +765,17 @@ export default function Index() {
                   />
                 </div>
 
+                {regError && (
+                  <div className="text-club-red text-xs font-body bg-club-red/10 border border-club-red/20 px-3 py-2">{regError}</div>
+                )}
+
                 <button
-                  onClick={() => setRegisterOpen(false)}
-                  className="w-full bg-club-red hover:bg-red-700 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                  onClick={doRegister}
+                  disabled={regLoading}
+                  className="w-full bg-club-red hover:bg-red-700 disabled:opacity-60 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
                 >
-                  <Icon name="UserPlus" size={16} />
-                  Вступить в клуб
+                  <Icon name={regLoading ? "Loader" : "UserPlus"} size={16} className={regLoading ? "animate-spin" : ""} />
+                  {regLoading ? "Регистрируем..." : "Вступить в клуб"}
                 </button>
 
                 <div className="text-center pt-2">

@@ -1,0 +1,30 @@
+{
+  "tests": [
+    {
+      "name": "Register new user",
+      "method": "POST",
+      "path": "/?action=register",
+      "body": {"nickname": "TestRider42", "email": "testrider42@touareg.ru", "password": "secret123", "car": "Touareg 3.0 TDI"},
+      "expectedStatus": 200,
+      "expectedBody": {"session_id": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Login with wrong password",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"email": "testrider99@touareg.ru", "password": "wrongpass"},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial",
+      "expectedBody": {"error": "string"}
+    },
+    {
+      "name": "Me without session",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "bodyMatcher": "partial",
+      "expectedBody": {"error": "string"}
+    }
+  ]
+}
