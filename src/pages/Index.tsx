@@ -59,6 +59,9 @@ export default function Index() {
   const [chatMsg, setChatMsg] = useState("");
   const [messages, setMessages] = useState(CHAT_MESSAGES_INIT);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -116,7 +119,10 @@ export default function Index() {
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
-            <button className="font-display text-sm tracking-wider text-club-chrome hover:text-white transition-colors uppercase">
+            <button
+              onClick={() => setLoginOpen(true)}
+              className="font-display text-sm tracking-wider text-club-chrome hover:text-white transition-colors uppercase"
+            >
               Войти
             </button>
             <button className="font-display text-sm tracking-wider bg-club-red text-white px-4 py-2 uppercase hover:bg-red-700 transition-colors">
@@ -141,7 +147,7 @@ export default function Index() {
               </button>
             ))}
             <div className="flex gap-3 mt-3 pt-3 border-t border-white/10">
-              <button className="flex-1 font-display text-sm tracking-wider text-club-chrome border border-club-chrome/30 py-2 uppercase">Войти</button>
+              <button onClick={() => { setLoginOpen(true); setMobileMenuOpen(false); }} className="flex-1 font-display text-sm tracking-wider text-club-chrome border border-club-chrome/30 py-2 uppercase">Войти</button>
               <button className="flex-1 font-display text-sm tracking-wider bg-club-red text-white py-2 uppercase">Вступить</button>
             </div>
           </div>
@@ -532,6 +538,82 @@ export default function Index() {
           </div>
         </div>
       </footer>
+
+      {/* LOGIN MODAL */}
+      {loginOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) setLoginOpen(false); }}
+        >
+          <div className="absolute inset-0 bg-club-dark/80 backdrop-blur-sm" onClick={() => setLoginOpen(false)} />
+          <div className="relative bg-club-steel border border-white/10 w-full max-w-sm animate-fade-in" style={{ animationFillMode: "forwards" }}>
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-club-red" />
+
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-5 h-5 bg-club-red flex items-center justify-center rotate-45">
+                      <span className="text-white font-display font-bold text-[8px] -rotate-45">T</span>
+                    </div>
+                    <span className="font-display font-bold text-sm tracking-widest text-white">TOUAREG<span className="text-club-red">CLUB</span></span>
+                  </div>
+                  <div className="font-display text-xs tracking-[0.3em] text-club-chrome uppercase mt-2">Вход в аккаунт</div>
+                </div>
+                <button onClick={() => setLoginOpen(false)} className="text-club-chrome hover:text-white transition-colors">
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Пароль</label>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                    onKeyDown={e => e.key === "Enter" && setLoginOpen(false)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-end">
+                  <button className="font-display text-xs tracking-wider text-club-chrome hover:text-club-red transition-colors uppercase">
+                    Забыли пароль?
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setLoginOpen(false)}
+                  className="w-full bg-club-red hover:bg-red-700 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
+                >
+                  <Icon name="LogIn" size={16} />
+                  Войти
+                </button>
+
+                <div className="text-center pt-2">
+                  <span className="text-club-chrome text-xs">Ещё нет аккаунта? </span>
+                  <button className="font-display text-xs tracking-wider text-club-red hover:text-red-400 transition-colors uppercase">
+                    Вступить в клуб
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
