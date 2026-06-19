@@ -55,6 +55,7 @@ function SectionHeader({ title, sub }: { title: string; sub: string }) {
 }
 
 const AUTH_URL = "https://functions.poehali.dev/0fdb3888-4048-481a-b03c-afd58fd284e5";
+const PHOTOS_URL = "https://functions.poehali.dev/f61dc778-dfc4-48bf-8aea-b76e188ae8cb";
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState("Главная");
@@ -78,6 +79,15 @@ export default function Index() {
 
   const [currentUser, setCurrentUser] = useState<{id: number; nickname: string; email: string; car: string} | null>(null);
 
+  const [galleryItems, setGalleryItems] = useState(GALLERY_ITEMS.map(g => ({ id: g.id, src: g.src, author: g.author, likes: g.likes, title: g.title })));
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,6 +98,14 @@ export default function Index() {
         .then(data => { if (data.user) setCurrentUser(data.user); })
         .catch(() => {});
     }
+    fetch(`${PHOTOS_URL}?action=list`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.photos && data.photos.length > 0) {
+          setGalleryItems(data.photos.map((p: {id: number; url: string; author: string; likes: number; title: string}) => ({ id: p.id, src: p.url, author: p.author, likes: p.likes, title: p.title })));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -139,6 +157,47 @@ export default function Index() {
     if (sid) await fetch(`${AUTH_URL}?action=logout`, { method: "POST", headers: { "X-Session-Id": sid } });
     localStorage.removeItem("session_id");
     setCurrentUser(null);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+  };
+
+  const doUpload = async () => {
+    if (!uploadFile) return;
+    setUploadError("");
+    setUploadLoading(true);
+    try {
+      const b64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(uploadFile);
+      });
+      const sid = localStorage.getItem("session_id") || "";
+      const r = await fetch(`${PHOTOS_URL}?action=upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Session-Id": sid },
+        body: JSON.stringify({ image: b64, title: uploadTitle || "Без названия", content_type: uploadFile.type }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setUploadError(data.error || "Ошибка загрузки"); return; }
+      setGalleryItems(prev => [{ id: data.id, src: data.url, author: data.author, likes: 0, title: data.title }, ...prev]);
+      setUploadOpen(false);
+      setUploadFile(null);
+      setUploadPreview(null);
+      setUploadTitle("");
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleAddPhotoClick = () => {
+    if (!currentUser) { setLoginOpen(true); return; }
+    setUploadOpen(true);
   };
 
   const sendMessage = () => {
@@ -378,7 +437,7 @@ export default function Index() {
         <div className="max-w-7xl mx-auto px-6">
           <SectionHeader title="ГАЛЕРЕЯ" sub="Фото участников клуба" />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {GALLERY_ITEMS.map((item, i) => (
+            {galleryItems.map((item, i) => (
               <div
                 key={item.id}
                 className={`relative overflow-hidden group cursor-pointer ${i === 0 ? "col-span-2" : ""}`}
@@ -397,9 +456,12 @@ export default function Index() {
             ))}
           </div>
           <div className="mt-8 flex justify-center">
-            <button className="font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-club-chrome px-8 py-3 hover:border-club-red hover:text-club-red transition-all duration-200 flex items-center gap-3">
+            <button
+              onClick={handleAddPhotoClick}
+              className="font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-club-chrome px-8 py-3 hover:border-club-red hover:text-club-red transition-all duration-200 flex items-center gap-3"
+            >
               <Icon name="Camera" size={16} />
-              Добавить фото
+              {currentUser ? "Добавить фото" : "Войти и добавить фото"}
             </button>
           </div>
         </div>
@@ -784,6 +846,73 @@ export default function Index() {
                     Войти
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD PHOTO MODAL */}
+      {uploadOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-club-dark/80 backdrop-blur-sm" onClick={() => setUploadOpen(false)} />
+          <div className="relative bg-club-steel border border-white/10 w-full max-w-sm animate-fade-in" style={{ animationFillMode: "forwards" }}>
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-club-red" />
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="font-display font-semibold text-white tracking-wider uppercase">Добавить фото</div>
+                <button onClick={() => setUploadOpen(false)} className="text-club-chrome hover:text-white transition-colors">
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Превью / зона загрузки */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative border-2 border-dashed border-white/10 hover:border-club-red/50 transition-colors cursor-pointer flex items-center justify-center overflow-hidden"
+                  style={{ aspectRatio: "16/9" }}
+                >
+                  {uploadPreview ? (
+                    <img src={uploadPreview} alt="preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-club-chrome">
+                      <Icon name="ImagePlus" size={32} />
+                      <span className="font-display text-xs tracking-wider uppercase">Выбрать файл</span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Название</label>
+                  <input
+                    type="text"
+                    value={uploadTitle}
+                    onChange={e => setUploadTitle(e.target.value)}
+                    placeholder="Мой Touareg на перевале"
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors font-body"
+                  />
+                </div>
+
+                {uploadError && (
+                  <div className="text-club-red text-xs bg-club-red/10 border border-club-red/20 px-3 py-2">{uploadError}</div>
+                )}
+
+                <button
+                  onClick={doUpload}
+                  disabled={uploadLoading || !uploadFile}
+                  className="w-full bg-club-red hover:bg-red-700 disabled:opacity-50 text-white font-display text-sm tracking-[0.2em] uppercase py-4 transition-all flex items-center justify-center gap-2"
+                >
+                  <Icon name={uploadLoading ? "Loader" : "Upload"} size={16} className={uploadLoading ? "animate-spin" : ""} />
+                  {uploadLoading ? "Загружаем..." : "Опубликовать"}
+                </button>
               </div>
             </div>
           </div>

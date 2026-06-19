@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "List photos",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"photos": []},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Upload without auth",
+      "method": "POST",
+      "path": "/?action=upload",
+      "body": {"title": "Test", "image": "abc"},
+      "expectedStatus": 401,
+      "expectedBody": {"error": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}
