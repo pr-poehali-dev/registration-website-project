@@ -635,12 +635,12 @@ export default function Index() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="space-y-6">
               {[
-                { icon: "Mail", label: "Email", value: "info@touareg-club.ru" },
-                { icon: "MessageCircle", label: "Telegram", value: "@touareg_club" },
-                { icon: "Globe", label: "VK Группа", value: "vk.com/touareg_club" },
-                { icon: "MapPin", label: "Москва", value: "Встречи каждую пятницу" },
+                { icon: "Mail", label: "Email", value: "info@touareg-club.ru", href: "mailto:info@touareg-club.ru" },
+                { icon: "MessageCircle", label: "Telegram", value: "t.me/touaregGPchat", href: "https://t.me/touaregGPchat" },
+                { icon: "Globe", label: "VK Группа", value: "vk.com/touareg_club", href: "https://vk.com/touareg_club" },
+                { icon: "MapPin", label: "Москва", value: "Встречи каждую пятницу", href: null },
               ].map(item => (
-                <div key={item.label} className="flex items-center gap-5 group cursor-pointer">
+                <a key={item.label} href={item.href || undefined} target={item.href?.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="flex items-center gap-5 group cursor-pointer no-underline">
                   <div className="w-12 h-12 bg-club-dark border border-white/10 group-hover:border-club-red/50 flex items-center justify-center transition-colors duration-200">
                     <Icon name={item.icon} fallback="Mail" size={18} className="text-club-chrome group-hover:text-club-red transition-colors" />
                   </div>
@@ -648,7 +648,7 @@ export default function Index() {
                     <div className="font-display text-xs tracking-[0.3em] uppercase text-club-chrome mb-0.5">{item.label}</div>
                     <div className="text-white group-hover:text-club-red transition-colors">{item.value}</div>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
 
