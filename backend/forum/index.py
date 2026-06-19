@@ -84,14 +84,14 @@ def handler(event: dict, context) -> dict:
             q(conn, f"UPDATE {SCHEMA}.forum_topics SET views = views + 1 WHERE id = %s", [topic_id])
             conn.commit()
             rows = q(conn, f"""
-                SELECT t.id, t.category, t.title, t.body, t.views, t.replies_count, t.created_at, u.nickname
+                SELECT t.id, t.category, t.title, t.body, t.views, t.replies_count, t.created_at, u.nickname, u.id
                 FROM {SCHEMA}.forum_topics t JOIN {SCHEMA}.users u ON u.id = t.user_id
                 WHERE t.id = %s
             """, [topic_id])
             if not rows:
                 return resp(404, {"error": "Тема не найдена"})
             t = rows[0]
-            topic = {"id": t[0], "category": t[1], "title": t[2], "body": t[3], "views": t[4], "replies": t[5], "created_at": str(t[6]), "author": t[7]}
+            topic = {"id": t[0], "category": t[1], "title": t[2], "body": t[3], "views": t[4], "replies": t[5], "created_at": str(t[6]), "author": t[7], "author_id": t[8]}
 
             replies_rows = q(conn, f"""
                 SELECT r.id, r.body, r.created_at, u.nickname
@@ -132,5 +132,25 @@ def handler(event: dict, context) -> dict:
             q(conn, f"UPDATE {SCHEMA}.forum_topics SET replies_count = replies_count + 1 WHERE id = %s", [topic_id])
             conn.commit()
         return resp(200, {"id": rows[0][0], "body": text, "author": user["nickname"], "created_at": str(rows[0][1])})
+
+    # POST edit_topic
+    if action == "edit_topic" and method == "POST":
+        user = get_user(session_id)
+        if not user:
+            return resp(401, {"error": "Войдите, чтобы редактировать тему"})
+        topic_id = body.get("topic_id")
+        title = (body.get("title") or "").strip()
+        text = (body.get("body") or "").strip()
+        if not topic_id or not title or not text:
+            return resp(400, {"error": "topic_id, заголовок и текст обязательны"})
+        with get_conn() as conn:
+            rows = q(conn, f"SELECT user_id FROM {SCHEMA}.forum_topics WHERE id = %s", [topic_id])
+            if not rows:
+                return resp(404, {"error": "Тема не найдена"})
+            if rows[0][0] != user["id"]:
+                return resp(403, {"error": "Только автор может редактировать тему"})
+            q(conn, f"UPDATE {SCHEMA}.forum_topics SET title = %s, body = %s WHERE id = %s", [title, text, topic_id])
+            conn.commit()
+        return resp(200, {"ok": True, "title": title, "body": text})
 
     return resp(404, {"error": "Not found"})

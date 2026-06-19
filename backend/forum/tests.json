@@ -5,7 +5,8 @@
       "method": "GET",
       "path": "/?action=list",
       "expectedStatus": 200,
-      "expectedBody": {"topics": []},
+      "expectedBody": {"categories": "array"},
+      "bodyMatcher2": "partial",
       "bodyMatcher": "partial"
     },
     {

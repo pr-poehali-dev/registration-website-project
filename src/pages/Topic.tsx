@@ -11,7 +11,7 @@ const CAT_COLORS: Record<string, string> = {
 };
 
 interface Reply { id: number; body: string; author: string; created_at: string; }
-interface Topic { id: number; category: string; title: string; body: string; views: number; replies: number; created_at: string; author: string; }
+interface Topic { id: number; category: string; title: string; body: string; views: number; replies: number; created_at: string; author: string; author_id: number; }
 
 export default function TopicPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +24,12 @@ export default function TopicPage() {
   const [replyError, setReplyError] = useState("");
   const [currentUser, setCurrentUser] = useState<{ id: number; nickname: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     const sid = localStorage.getItem("session_id");
@@ -58,6 +64,31 @@ export default function TopicPage() {
       setReplyText("");
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } finally { setReplyLoading(false); }
+  };
+
+  const openEdit = () => {
+    if (!topic) return;
+    setEditTitle(topic.title);
+    setEditBody(topic.body);
+    setEditError("");
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editTitle.trim() || !editBody.trim()) { setEditError("Заполните заголовок и текст"); return; }
+    setEditLoading(true); setEditError("");
+    try {
+      const sid = localStorage.getItem("session_id") || "";
+      const r = await fetch(`${FORUM_URL}?action=edit_topic`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Session-Id": sid },
+        body: JSON.stringify({ topic_id: Number(id), title: editTitle, body: editBody }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setEditError(d.error || "Ошибка"); return; }
+      setTopic(prev => prev ? { ...prev, title: d.title, body: d.body } : prev);
+      setEditOpen(false);
+    } finally { setEditLoading(false); }
   };
 
   const timeAgo = (iso: string) => {
@@ -117,14 +148,25 @@ export default function TopicPage() {
             </div>
             <h1 className="font-display font-bold text-2xl md:text-3xl text-white tracking-tight mb-6 leading-tight">{topic.title}</h1>
 
-            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-white/5">
-              <div className="w-10 h-10 bg-club-red/20 border border-club-red/30 flex items-center justify-center font-display font-bold text-club-red flex-shrink-0">
-                {topic.author[0].toUpperCase()}
+            <div className="flex items-center justify-between mb-6 pb-6 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-club-red/20 border border-club-red/30 flex items-center justify-center font-display font-bold text-club-red flex-shrink-0">
+                  {topic.author[0].toUpperCase()}
+                </div>
+                <div>
+                  <div className="font-display text-sm text-white tracking-wider">{topic.author}</div>
+                  <div className="text-club-chrome text-xs">{timeAgo(topic.created_at)}</div>
+                </div>
               </div>
-              <div>
-                <div className="font-display text-sm text-white tracking-wider">{topic.author}</div>
-                <div className="text-club-chrome text-xs">{timeAgo(topic.created_at)}</div>
-              </div>
+              {currentUser && currentUser.id === topic.author_id && (
+                <button
+                  onClick={openEdit}
+                  className="flex items-center gap-2 font-display text-xs tracking-wider uppercase text-club-chrome hover:text-white border border-white/10 hover:border-club-red/50 px-3 py-2 transition-all"
+                >
+                  <Icon name="Pencil" size={12} />
+                  Редактировать
+                </button>
+              )}
             </div>
 
             <div className="text-club-light leading-relaxed whitespace-pre-wrap">{topic.body}</div>
@@ -204,6 +246,58 @@ export default function TopicPage() {
           </div>
         </div>
       </div>
+
+      {/* EDIT MODAL */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-club-dark/80 backdrop-blur-sm" onClick={() => setEditOpen(false)} />
+          <div className="relative bg-club-steel border border-white/10 w-full max-w-lg">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-club-red" />
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <div className="font-display font-semibold text-white tracking-wider uppercase flex items-center gap-2">
+                  <Icon name="Pencil" size={16} className="text-club-red" />
+                  Редактировать тему
+                </div>
+                <button onClick={() => setEditOpen(false)} className="text-club-chrome hover:text-white transition-colors">
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Заголовок</label>
+                  <input
+                    type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)}
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm outline-none transition-colors font-body"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Текст</label>
+                  <textarea
+                    value={editBody} onChange={e => setEditBody(e.target.value)}
+                    rows={6}
+                    className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm outline-none transition-colors resize-none font-body"
+                  />
+                </div>
+                {editError && <div className="text-club-red text-xs bg-club-red/10 border border-club-red/20 px-3 py-2">{editError}</div>}
+                <div className="flex gap-3">
+                  <button onClick={() => setEditOpen(false)} className="flex-1 font-display text-sm tracking-[0.2em] uppercase border border-white/10 text-club-chrome py-3 hover:border-white/30 transition-all">
+                    Отмена
+                  </button>
+                  <button
+                    onClick={saveEdit} disabled={editLoading}
+                    className="flex-1 bg-club-red hover:bg-red-700 disabled:opacity-60 text-white font-display text-sm tracking-[0.2em] uppercase py-3 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icon name={editLoading ? "Loader" : "Check"} size={14} className={editLoading ? "animate-spin" : ""} />
+                    {editLoading ? "Сохраняем..." : "Сохранить"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
