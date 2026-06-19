@@ -579,7 +579,9 @@ export default function Index() {
       {/* CHAT */}
       <section id="чат" className="py-24 bg-club-dark relative">
         <div className="max-w-3xl mx-auto px-6">
-          <SectionHeader title="ЧАТ" sub="Общение в реальном времени" />
+          <SectionHeader title="ЧАТ" sub="Живое общение в Telegram" />
+
+          {/* Telegram widget */}
           <div className="border border-white/10 overflow-hidden">
             <div className="bg-club-steel px-5 py-3 flex items-center justify-between border-b border-white/10">
               <div className="flex items-center gap-3">
@@ -588,46 +590,45 @@ export default function Index() {
                   <div className="w-3 h-3 rounded-full bg-white/20" />
                   <div className="w-3 h-3 rounded-full bg-white/10" />
                 </div>
-                <span className="font-display text-sm tracking-wider text-white uppercase">Общий чат</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-club-chrome text-xs">47 онлайн</span>
-              </div>
-            </div>
-
-            <div className="h-72 overflow-y-auto px-5 py-4 space-y-4 bg-club-dark/60">
-              {messages.map(msg => (
-                <div key={msg.id} className={`flex items-start gap-3 ${msg.user === "Вы" ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center font-display font-bold text-xs ${msg.user === "Вы" ? "bg-club-red text-white" : "bg-club-steel border border-white/10 text-club-chrome"}`}>
-                    {msg.avatar}
-                  </div>
-                  <div className={`max-w-xs flex flex-col ${msg.user === "Вы" ? "items-end" : "items-start"}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-display text-xs tracking-wider ${msg.user === "Вы" ? "text-club-red" : "text-club-chrome"}`}>{msg.user}</span>
-                      <span className="text-white/20 text-xs">{msg.time}</span>
-                    </div>
-                    <div className={`px-4 py-2 text-sm ${msg.user === "Вы" ? "bg-club-red/20 border border-club-red/30 text-white" : "bg-club-steel border border-white/5 text-club-light"}`}>
-                      {msg.text}
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.26 14.4l-2.95-.924c-.64-.203-.654-.64.135-.954l11.57-4.461c.537-.194 1.006.131.879.16z" fill="#2AABEE"/>
+                  </svg>
+                  <span className="font-display text-sm tracking-wider text-white uppercase">touaregGPchat</span>
                 </div>
-              ))}
-              <div ref={chatEndRef} />
+              </div>
+              <a
+                href="https://t.me/touaregGPchat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 font-display text-xs tracking-wider uppercase text-club-chrome hover:text-white transition-colors"
+              >
+                <Icon name="ExternalLink" size={12} />
+                Открыть
+              </a>
             </div>
 
-            <div className="border-t border-white/10 flex bg-club-steel">
-              <input
-                type="text"
-                value={chatMsg}
-                onChange={e => setChatMsg(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && sendMessage()}
-                placeholder="Написать сообщение..."
-                className="flex-1 bg-transparent px-5 py-4 text-white text-sm placeholder-club-chrome/50 outline-none font-body"
+            <div className="bg-club-dark/60" style={{ height: 500 }}>
+              <iframe
+                src="https://t.me/touaregGPchat/1?embed=1&mode=tme"
+                style={{ width: "100%", height: "100%", border: "none" }}
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-popups"
               />
-              <button onClick={sendMessage} className="bg-club-red hover:bg-red-700 transition-colors px-5 py-4 flex items-center justify-center">
-                <Icon name="Send" size={16} className="text-white" />
-              </button>
+            </div>
+
+            <div className="border-t border-white/10 bg-club-steel px-5 py-4 flex items-center gap-3">
+              <Icon name="MessageCircle" size={16} className="text-club-chrome flex-shrink-0" />
+              <span className="text-club-chrome text-sm font-body">Чтобы написать сообщение —</span>
+              <a
+                href="https://t.me/touaregGPchat"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-display text-sm tracking-wider uppercase text-club-red hover:text-red-400 transition-colors flex items-center gap-1"
+              >
+                перейти в Telegram
+                <Icon name="ArrowRight" size={14} />
+              </a>
             </div>
           </div>
         </div>
