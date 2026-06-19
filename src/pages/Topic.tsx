@@ -10,8 +10,17 @@ const CAT_COLORS: Record<string, string> = {
   "Путешествия": "text-green-400", "Электрика": "text-yellow-400", "Общее": "text-club-chrome",
 };
 
-interface Reply { id: number; body: string; author: string; created_at: string; }
-interface Topic { id: number; category: string; title: string; body: string; views: number; replies: number; created_at: string; author: string; author_id: number; }
+interface Reply { id: number; body: string; author: string; created_at: string; image_url?: string; }
+interface Topic { id: number; category: string; title: string; body: string; views: number; replies: number; created_at: string; author: string; author_id: number; image_url?: string; }
+
+function fileToB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export default function TopicPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,11 +34,18 @@ export default function TopicPage() {
   const [currentUser, setCurrentUser] = useState<{ id: number; nickname: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const [replyFile, setReplyFile] = useState<File | null>(null);
+  const [replyPreview, setReplyPreview] = useState<string | null>(null);
+  const replyFileRef = useRef<HTMLInputElement>(null);
+
   const [editOpen, setEditOpen] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editPreview, setEditPreview] = useState<string | null>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const sid = localStorage.getItem("session_id");
@@ -53,15 +69,20 @@ export default function TopicPage() {
     setReplyError(""); setReplyLoading(true);
     try {
       const sid = localStorage.getItem("session_id") || "";
+      const payload: Record<string, string | number> = { topic_id: Number(id), body: replyText };
+      if (replyFile) {
+        payload.image = await fileToB64(replyFile);
+        payload.content_type = replyFile.type;
+      }
       const r = await fetch(`${FORUM_URL}?action=create_reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Session-Id": sid },
-        body: JSON.stringify({ topic_id: Number(id), body: replyText }),
+        body: JSON.stringify(payload),
       });
       const d = await r.json();
       if (!r.ok) { setReplyError(d.error || "Ошибка"); return; }
       setReplies(prev => [...prev, d]);
-      setReplyText("");
+      setReplyText(""); setReplyFile(null); setReplyPreview(null);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } finally { setReplyLoading(false); }
   };
@@ -70,6 +91,8 @@ export default function TopicPage() {
     if (!topic) return;
     setEditTitle(topic.title);
     setEditBody(topic.body);
+    setEditFile(null);
+    setEditPreview(topic.image_url || null);
     setEditError("");
     setEditOpen(true);
   };
@@ -79,14 +102,19 @@ export default function TopicPage() {
     setEditLoading(true); setEditError("");
     try {
       const sid = localStorage.getItem("session_id") || "";
+      const payload: Record<string, string | number> = { topic_id: Number(id), title: editTitle, body: editBody };
+      if (editFile) {
+        payload.image = await fileToB64(editFile);
+        payload.content_type = editFile.type;
+      }
       const r = await fetch(`${FORUM_URL}?action=edit_topic`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Session-Id": sid },
-        body: JSON.stringify({ topic_id: Number(id), title: editTitle, body: editBody }),
+        body: JSON.stringify(payload),
       });
       const d = await r.json();
       if (!r.ok) { setEditError(d.error || "Ошибка"); return; }
-      setTopic(prev => prev ? { ...prev, title: d.title, body: d.body } : prev);
+      setTopic(prev => prev ? { ...prev, title: d.title, body: d.body, image_url: d.image_url } : prev);
       setEditOpen(false);
     } finally { setEditLoading(false); }
   };
@@ -170,6 +198,17 @@ export default function TopicPage() {
             </div>
 
             <div className="text-club-light leading-relaxed whitespace-pre-wrap">{topic.body}</div>
+            {topic.image_url && (
+              <div className="mt-5">
+                <img
+                  src={topic.image_url}
+                  alt="Фото к теме"
+                  className="max-w-full rounded-sm border border-white/10 cursor-pointer hover:border-club-red/40 transition-colors"
+                  style={{ maxHeight: 480, objectFit: "contain" }}
+                  onClick={() => window.open(topic.image_url, "_blank")}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -190,6 +229,17 @@ export default function TopicPage() {
                     <span className="text-club-chrome/40 text-xs">{timeAgo(reply.created_at)}</span>
                   </div>
                   <div className="text-club-light leading-relaxed whitespace-pre-wrap text-sm">{reply.body}</div>
+                  {reply.image_url && (
+                    <div className="mt-3">
+                      <img
+                        src={reply.image_url}
+                        alt="Фото"
+                        className="max-w-full border border-white/10 cursor-pointer hover:border-club-red/40 transition-colors"
+                        style={{ maxHeight: 360, objectFit: "contain" }}
+                        onClick={() => window.open(reply.image_url, "_blank")}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -221,8 +271,30 @@ export default function TopicPage() {
                     className="flex-1 bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors resize-none font-body"
                   />
                 </div>
+                {replyPreview && (
+                  <div className="mt-3 relative inline-block">
+                    <img src={replyPreview} alt="preview" className="max-h-40 border border-white/10" />
+                    <button
+                      onClick={() => { setReplyFile(null); setReplyPreview(null); }}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-club-red text-white flex items-center justify-center"
+                    >
+                      <Icon name="X" size={10} />
+                    </button>
+                  </div>
+                )}
                 {replyError && <div className="text-club-red text-xs bg-club-red/10 border border-club-red/20 px-3 py-2 mt-3">{replyError}</div>}
-                <div className="flex justify-end mt-3">
+                <div className="flex items-center justify-between mt-3">
+                  <button
+                    onClick={() => replyFileRef.current?.click()}
+                    className="flex items-center gap-2 font-display text-xs tracking-wider uppercase text-club-chrome hover:text-white border border-white/10 hover:border-white/30 px-3 py-2 transition-all"
+                  >
+                    <Icon name="ImagePlus" size={13} />
+                    {replyFile ? "Сменить фото" : "Прикрепить фото"}
+                  </button>
+                  <input ref={replyFileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) { setReplyFile(f); setReplyPreview(URL.createObjectURL(f)); }
+                  }} />
                   <button
                     onClick={sendReply} disabled={replyLoading || !replyText.trim()}
                     className="font-display text-sm tracking-[0.2em] uppercase bg-club-red hover:bg-red-700 disabled:opacity-50 text-white px-6 py-3 transition-all flex items-center gap-2"
@@ -279,6 +351,33 @@ export default function TopicPage() {
                     rows={6}
                     className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm outline-none transition-colors resize-none font-body"
                   />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Фото</label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => editFileRef.current?.click()}
+                      className="flex items-center gap-2 font-display text-xs tracking-wider uppercase text-club-chrome hover:text-white border border-white/10 hover:border-white/30 px-3 py-2 transition-all"
+                    >
+                      <Icon name="ImagePlus" size={13} />
+                      {editFile ? "Сменить" : editPreview ? "Заменить фото" : "Добавить фото"}
+                    </button>
+                    {editPreview && (
+                      <div className="relative">
+                        <img src={editPreview} alt="preview" className="h-14 border border-white/10" />
+                        <button
+                          onClick={() => { setEditFile(null); setEditPreview(null); }}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-club-red text-white flex items-center justify-center"
+                        >
+                          <Icon name="X" size={8} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <input ref={editFileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) { setEditFile(f); setEditPreview(URL.createObjectURL(f)); }
+                  }} />
                 </div>
                 {editError && <div className="text-club-red text-xs bg-club-red/10 border border-club-red/20 px-3 py-2">{editError}</div>}
                 <div className="flex gap-3">

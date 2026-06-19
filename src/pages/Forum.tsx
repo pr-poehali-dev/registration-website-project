@@ -1,6 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+
+function fileToB64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 const FORUM_URL = "https://functions.poehali.dev/bed2061a-c7ec-4d7b-a472-b3aec13a758c";
 const AUTH_URL = "https://functions.poehali.dev/0fdb3888-4048-481a-b03c-afd58fd284e5";
@@ -29,6 +38,9 @@ export default function Forum() {
   const [ntCategory, setNtCategory] = useState("Общее");
   const [ntError, setNtError] = useState("");
   const [ntLoading, setNtLoading] = useState(false);
+  const [ntFile, setNtFile] = useState<File | null>(null);
+  const [ntPreview, setNtPreview] = useState<string | null>(null);
+  const ntFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const sid = localStorage.getItem("session_id");
@@ -51,10 +63,15 @@ export default function Forum() {
     setNtError(""); setNtLoading(true);
     try {
       const sid = localStorage.getItem("session_id") || "";
+      const payload: Record<string, string> = { title: ntTitle, body: ntBody, category: ntCategory };
+      if (ntFile) {
+        payload.image = await fileToB64(ntFile);
+        payload.content_type = ntFile.type;
+      }
       const r = await fetch(`${FORUM_URL}?action=create_topic`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Session-Id": sid },
-        body: JSON.stringify({ title: ntTitle, body: ntBody, category: ntCategory }),
+        body: JSON.stringify(payload),
       });
       const d = await r.json();
       if (!r.ok) { setNtError(d.error || "Ошибка"); return; }
@@ -215,6 +232,37 @@ export default function Forum() {
                     placeholder="Подробно опишите вашу тему..."
                     rows={5}
                     className="w-full bg-club-dark border border-white/10 focus:border-club-red/60 px-4 py-3 text-white text-sm placeholder-club-chrome/40 outline-none transition-colors resize-none font-body"
+                  />
+                </div>
+                <div>
+                  <label className="font-display text-xs tracking-[0.25em] uppercase text-club-chrome block mb-2">Фото (необязательно)</label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => ntFileRef.current?.click()}
+                      className="flex items-center gap-2 font-display text-xs tracking-wider uppercase text-club-chrome hover:text-white border border-white/10 hover:border-white/30 px-3 py-2 transition-all"
+                    >
+                      <Icon name="ImagePlus" size={13} />
+                      {ntFile ? "Сменить фото" : "Прикрепить фото"}
+                    </button>
+                    {ntPreview && (
+                      <div className="relative">
+                        <img src={ntPreview} alt="preview" className="h-14 border border-white/10 object-cover" />
+                        <button
+                          onClick={() => { setNtFile(null); setNtPreview(null); }}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-club-red text-white flex items-center justify-center"
+                        >
+                          <Icon name="X" size={8} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={ntFileRef} type="file" accept="image/*" className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) { setNtFile(f); setNtPreview(URL.createObjectURL(f)); }
+                    }}
                   />
                 </div>
                 {ntError && <div className="text-club-red text-xs bg-club-red/10 border border-club-red/20 px-3 py-2">{ntError}</div>}
