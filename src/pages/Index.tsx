@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
 const HERO_IMG = "https://cdn.poehali.dev/projects/4a502ab0-d6cf-44a4-add6-71504e66624d/files/a00cd263-627e-49cb-802c-d2f3ea88c331.jpg";
@@ -58,6 +59,7 @@ const AUTH_URL = "https://functions.poehali.dev/0fdb3888-4048-481a-b03c-afd58fd2
 const PHOTOS_URL = "https://functions.poehali.dev/f61dc778-dfc4-48bf-8aea-b76e188ae8cb";
 
 export default function Index() {
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("Главная");
   const [chatMsg, setChatMsg] = useState("");
   const [messages, setMessages] = useState(CHAT_MESSAGES_INIT);
@@ -340,7 +342,7 @@ export default function Index() {
 
             <div className="opacity-0 animate-fade-in-delay2 flex flex-wrap gap-4" style={{ animationFillMode: "forwards" }}>
               <button
-                onClick={() => scrollTo("Форум")}
+                onClick={() => navigate("/forum")}
                 className="font-display text-sm tracking-[0.2em] uppercase bg-club-red text-white px-8 py-4 hover:bg-red-700 transition-all duration-200 hover:scale-105 flex items-center gap-3"
               >
                 <Icon name="MessageSquare" size={16} />
@@ -395,6 +397,7 @@ export default function Index() {
             {FORUM_POSTS.map((post, i) => (
               <div
                 key={post.id}
+                onClick={() => navigate("/forum")}
                 className="bg-club-dark/40 border border-white/5 hover:border-club-red/30 hover:bg-club-dark/60 p-5 flex items-center gap-5 transition-all duration-200 cursor-pointer group"
                 style={{ animationDelay: `${i * 0.1}s` }}
               >
@@ -425,7 +428,10 @@ export default function Index() {
           </div>
 
           <div className="mt-6 flex justify-center">
-            <button className="font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-club-chrome px-8 py-3 hover:border-club-red hover:text-club-red transition-all duration-200">
+            <button
+              onClick={() => navigate("/forum")}
+              className="font-display text-sm tracking-[0.2em] uppercase border border-white/20 text-club-chrome px-8 py-3 hover:border-club-red hover:text-club-red transition-all duration-200"
+            >
               Все темы форума
             </button>
           </div>
